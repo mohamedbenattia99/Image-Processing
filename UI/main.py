@@ -2,7 +2,9 @@ import imageIO as io
 import stats as st
 import contrast as ct
 import filters as filt
+import settings as s
 from image import ImageModel
+import morphologic as mor
 import math
 import matplotlib
 import tkinter as tk
@@ -23,6 +25,8 @@ class main_app:
         self.init_interface()
         self.orig_image = ImageModel()
         self.new_image = ImageModel()
+        self.otsu_image = ImageModel()
+        self.binary_instances = []
 
     def init_interface(self):
         root_menu = tk.Menu(self.window)
@@ -39,6 +43,8 @@ class main_app:
         image_menu.add_command(label="Inverse")
         root_menu.add_cascade(label="Original Image Histogram", menu=image_menu)
         root_menu.add_command(label="Contrast Modification")
+
+
 
         # ***********    Origin Image Frame ************
 
@@ -60,7 +66,7 @@ class main_app:
 
         # ***********    Image Place      ************
 
-        image_frame = tk.Frame(orig_image_frame, width=self.window.winfo_screenwidth() * 0.15, height=200, pady=5)
+        image_frame = tk.Frame(orig_image_frame, width=self.window.winfo_screenwidth() * 0.45, height=200, pady=5)
         tk.Label(image_frame, text="Voici l'image importée:").pack(padx=10)
         self.orig_fig = Figure(figsize=(6, 5), dpi=100)
         self.orig_ax = self.orig_fig.add_subplot(111)
@@ -200,12 +206,14 @@ class main_app:
         self.laplace_filter = tk.Button(buttons_frame, text="Filtre Laplace", padx=10, pady=5,
                                         command=self.laplace_filter, state=tk.DISABLED)
         self.laplace_filter.grid(row=3, column=1, padx=10)
+        
+      
 
         buttons_frame.pack(anchor=tk.NW, padx=10)
         buttons_frame.pack(anchor=tk.NW, padx=10)
 
         ttk.Separator(new_image_data_frame, orient='horizontal').pack(fill='x', pady=5)
-
+      
 
         # ***********    New Image Metrics ************
 
@@ -245,6 +253,36 @@ class main_app:
         histogram_comparison_frame.pack(anchor=tk.NW, padx=10)
 
         ttk.Separator(new_image_data_frame, orient='horizontal').pack(fill='x', pady=5)
+          # ***********   Binary Operations    ************
+
+                
+        binary_frame = tk.Frame(new_image_data_frame, height=100, width=100, pady=5)
+
+        tk.Label(binary_frame, text="Binarization").grid(row=0, column=0,columnspan=3)
+        tk.Label(binary_frame, text="Generate binary image ").grid(row=1, column=0)
+        self.otsu_button = tk.Button(binary_frame, text="Otsu Program",width=10, padx=10, pady=5, command=self.otsu)
+        self.otsu_button.grid(row=1, column=1,padx=10,pady=5)
+
+        tk.Label(binary_frame, text="Structurant element size:").grid(row=2, column=0,pady=5,padx=5,sticky='w')
+        self.element_size = tk.Entry(binary_frame, width=5, relief=tk.SUNKEN)
+        self.element_size.grid(row=2, column=1,sticky='w',padx=5)
+
+        self.erosion = tk.Button(binary_frame, text="Erosion",width=10, padx=10, pady=5, command=self.erosion_func,state=tk.DISABLED)
+        self.erosion.grid(row=3, column=0,padx=10)
+        self.dilatation = tk.Button(binary_frame, text="Dilatation",width=10, padx=10, pady=5, command=self.dilatation_func,state=tk.DISABLED)
+        self.dilatation.grid(row=3, column=1,padx=10)
+        self.ouverture = tk.Button(binary_frame, text="Ouverture",width=10, padx=10, pady=5, command=self.opening,state=tk.DISABLED)
+        self.ouverture.grid(row=3, column=2,padx=10,pady=(0,5))
+        self.fermeture = tk.Button(binary_frame, text="Fermeture",width=10, padx=10, pady=5, command=self.closing,state=tk.DISABLED)
+        self.fermeture.grid(row=4, column=0,padx=10)
+        self.reset_button = tk.Button(binary_frame, text="Reset",width=10, padx=10, pady=5, command=self.reset_instance,state=tk.DISABLED)
+        self.reset_button.grid(row=4, column=1,padx=10)
+        
+        binary_frame.pack(anchor=tk.NW,padx=10)
+        binary_frame.pack(anchor=tk.NW,padx=10)
+    
+        ttk.Separator(new_image_data_frame, orient='horizontal').pack(fill='x', pady=5)
+       
         # ***********    Saving New Edited Image ************
 
         file_frame = tk.Frame(new_image_data_frame, height=100, width=100, pady=5)
@@ -253,8 +291,11 @@ class main_app:
         self.save_button.grid(row=1, column=1, columnspan=2, padx=10)
         file_frame.pack(anchor=tk.NW, padx=10)
 
-        ttk.Separator(new_image_data_frame, orient='horizontal').pack(fill='x', pady=5)
+     
+        
 
+        ttk.Separator(new_image_data_frame, orient='horizontal').pack(fill='x', pady=5)
+       
         # ***********    New Image Frame ************
 
         new_image_frame = tk.Frame(self.window, width=self.window.winfo_screenwidth() * 0.45)
@@ -337,6 +378,7 @@ class main_app:
         self.new_entropy_text.config(text=str(st.entropy(self.new_image.get_data())))
         self.display_new_image()
         self.new_image.is_noise = False
+      
 
     def display_orig_image(self):
         self.orig_ax.clear()
@@ -347,6 +389,7 @@ class main_app:
         self.new_ax.clear()
         self.new_ax.imshow(Image.fromarray(self.new_image.data))
         self.new_fig.canvas.draw()
+
 
     def generate_hists_callback(self):
         st.generate_histograms(self.orig_image.get_data())
@@ -439,11 +482,103 @@ class main_app:
         self.write_console("Filtre LaPlace ajouté avec succès")
         self.update_new_image()
         self.new_snr_text.config(text=str(filt.SNR(self.orig_image.get_data(), self.new_image.get_data())))
+   
+    def otsu(self):
+        width,height,gray_level,final_image = mor.otsu(self.orig_image.get_data())
+        self.new_image.set_attributes(width, height, gray_level, final_image)
+        self.otsu_image.set_attributes(width, height, gray_level, final_image)
+        self.write_console("IMAGE BINARISE")
+        self.update_new_image()
+        #self.new_snr_text.config(text=str(filt.SNR(self.orig_image.get_data(), self.new_image.get_data())))
+        self.erosion.config(state=tk.NORMAL)
+        self.dilatation.config(state=tk.NORMAL)
+        self.ouverture.config(state=tk.NORMAL)
+        self.fermeture.config(state=tk.NORMAL)
+        self.reset_button.config(state=tk.NORMAL)
+        self.binary_instances = []
+    
+    def erosion_func(self):
+        element_size = self.element_size.get()
+        if(element_size == ""):
+            self.write_console("Add structurant element size !!")
+        else:
+            if(len(self.binary_instances) == 0):
+                width,height,gray_level,final_image = mor.erosion(self.otsu_image.get_data(), int(element_size))
+                self.binary_instances.append(self.otsu_image)
+            else:
+                width,height,gray_level,final_image = mor.erosion(self.binary_instances[-1].get_data(), int(element_size))
+                self.binary_instances.append(self.binary_instances[-1])
+            self.new_image.set_attributes(width, height, gray_level, final_image)
+            self.write_console("Erosion applied !")
+            self.update_new_image()
+            #self.new_snr_text.config(text=str(filt.SNR(self.orig_image.get_data(), self.new_image.get_data())))
+    def dilatation_func(self):
+        element_size = self.element_size.get()
+        if(element_size == ""):
+            self.write_console("Add structurant element size !!")
+        else:
+            if(len(self.binary_instances) == 0):
+                width,height,gray_level,final_image = mor.dilatation(self.otsu_image.get_data(), int(element_size))
+                self.binary_instances.append(self.otsu_image)
+            else:
+                width,height,gray_level,final_image = mor.dilatation(self.binary_instances[-1].get_data(), int(element_size))
+                self.binary_instances.append(self.binary_instances[-1])
+            #width,height,gray_level,final_image = mor.dilatation(self.otsu_image.get_data(), int(element_size))
+            self.new_image.set_attributes(width, height, gray_level, final_image)
+            self.write_console("dilatation applied !")
+            self.update_new_image()
+            self.binary_instances.append(self.new_image)
+            #self.new_snr_text.config(text=str(filt.SNR(self.orig_image.get_data(), self.new_image.get_data())))
 
+    def opening(self):
+        element_size = self.element_size.get()
+        if(element_size == ""):
+            self.write_console("Add structurant element size !!")
+        else:
+            if(len(self.binary_instances) == 0):
+                width,height,gray_level,final_image = mor.opening(self.otsu_image.get_data(), int(element_size))
+                self.binary_instances.append(self.otsu_image)
+            else:
+                width,height,gray_level,final_image = mor.opening(self.binary_instances[-1].get_data(), int(element_size))
+                self.binary_instances.append(self.binary_instances[-1])
+            #width,height,gray_level,final_image = mor.opening(self.otsu_image.get_data(), int(element_size))
+            self.new_image.set_attributes(width, height, gray_level, final_image)
+            self.write_console("Erosion applied !")
+            self.update_new_image()
+            self.binary_instances.append(self.new_image)
+    def closing(self):
+        element_size = self.element_size.get()
+        if(element_size == ""):
+            self.write_console("Add structurant element size !!")
+        else:
+            if(len(self.binary_instances) == 0):
+                width,height,gray_level,final_image = mor.closing(self.otsu_image.get_data(), int(element_size))
+                self.binary_instances.append(self.otsu_image)
+            else:
+                width,height,gray_level,final_image = mor.closing(self.binary_instances[-1].get_data(), int(element_size))
+                self.binary_instances.append(self.binary_instances[-1])
+            #width,height,gray_level,final_image = mor.closing(self.otsu_image.get_data(), int(element_size))
+            self.new_image.set_attributes(width, height, gray_level, final_image)
+            self.write_console("Erosion applied !")
+            self.update_new_image()
+            self.binary_instances.append(self.new_image)
+
+    def reset_instance(self):
+        if (len(self.binary_instances) == 0):
+            self.write_console("Already at orginal binarized function")
+        else:
+            last_image = self.binary_instances.pop()
+            width,height,gray_level,last_image_data = last_image.get_data()
+            self.new_image.set_attributes(width,height,gray_level,last_image_data)
+            self.update_new_image()
+            self.write_console("precedent image!")
+    
     def write_console(self, text):
         self.console.config(state=tk.NORMAL)
         self.console.insert(tk.END, f'{datetime.today().strftime("%Y-%m-%d %H:%M:%S")} : {text}\n')
         self.console.config(state=tk.DISABLED)
+    
+    
 
 
 main_screen = tk.Tk()
