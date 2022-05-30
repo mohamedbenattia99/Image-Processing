@@ -42,7 +42,7 @@ class main_app:
 
         # ***********    Origin Image Frame ************
 
-        orig_image_frame = tk.Frame(self.window, width=self.window.winfo_screenwidth() * 0.25)
+        orig_image_frame = tk.Frame(self.window, width=self.window.winfo_screenwidth() * 0.35)
         orig_image_frame.pack_propagate(0)
         orig_image_frame.pack(anchor=tk.W, side=tk.LEFT, fill=tk.Y, expand=tk.YES)
 
@@ -132,7 +132,7 @@ class main_app:
 
         # ***********    New Image Data Frame ************
 
-        new_image_data_frame = tk.Frame(self.window, width=self.window.winfo_screenwidth() * 0.25)
+        new_image_data_frame = tk.Frame(self.window, width=self.window.winfo_screenwidth() * 0.35)
         new_image_data_frame.pack_propagate(0)
         new_image_data_frame.pack(anchor=tk.W, fill=tk.Y, side=tk.LEFT, expand=tk.YES)
 
@@ -140,24 +140,24 @@ class main_app:
         # ***********    Different Operations ************
 
         operations_frame = tk.Frame(new_image_data_frame, height=100, width=100, pady=5)
-        tk.Label(operations_frame, text="Histogram equalization").grid(row=0, column=0)
-        self.histogram_equalization = tk.Button(operations_frame, text="Equalize", padx=10, pady=5,
+        tk.Label(operations_frame, text="Egaliser Histogramme").grid(row=0, column=0)
+        self.histogram_equalization = tk.Button(operations_frame, text="Egaliser", padx=10, pady=5,
                                                 command=self.equalize_callback, state=tk.DISABLED)
         self.histogram_equalization.grid(row=0, column=1, padx=10)
-        tk.Label(operations_frame, text="Define A(x,y) and B(z,w) for contrast function (x <= z)").grid(row=1, column=0,
+        tk.Label(operations_frame).grid(row=1, column=0,
                                                                                                         columnspan=10,
                                                                                                         padx=5, pady=5,
                                                                                                         sticky='w')
 
         contrast_function_frame = tk.Frame(new_image_data_frame, height=100, width=100, pady=5)
 
-        tk.Label(contrast_function_frame, text="Point A (x,y):").grid(row=2, column=0, pady=5, padx=5, sticky='w')
+        tk.Label(contrast_function_frame, text="1er point:").grid(row=2, column=0, pady=5, padx=5, sticky='w')
         self.A_x = tk.Entry(contrast_function_frame, width=5, relief=tk.SUNKEN)
         self.A_x.grid(row=2, column=1, sticky='w', padx=5)
         self.A_y = tk.Entry(contrast_function_frame, width=5, relief=tk.SUNKEN)
         self.A_y.grid(row=2, column=2, sticky='w', padx=5)
 
-        tk.Label(contrast_function_frame, text="Point B (z,w):").grid(row=3, column=0, pady=5, padx=5, sticky='w')
+        tk.Label(contrast_function_frame, text="2ème point:").grid(row=3, column=0, pady=5, padx=5, sticky='w')
         self.B_x = tk.Entry(contrast_function_frame, width=5, relief=tk.SUNKEN)
         self.B_x.grid(row=3, column=1, sticky='w', padx=5)
         self.B_y = tk.Entry(contrast_function_frame, width=5, relief=tk.SUNKEN)
@@ -171,23 +171,12 @@ class main_app:
         contrast_function_frame.pack(anchor=tk.NW, padx=10)
 
         ttk.Separator(new_image_data_frame, orient='horizontal').pack(fill='x', pady=5)
-        # ***********    Compare Histograms ************
-
-        histogram_comparison_frame = tk.Frame(new_image_data_frame, width=100, height=300, pady=5)
-        tk.Label(histogram_comparison_frame, text="Compare Histograms (Original vs New):").grid(row=0, column=0, padx=5,
-                                                                                                sticky='w')
-        self.generate_compare_hists_button = tk.Button(histogram_comparison_frame, text="Generate", pady=5,
-                                                       command=self.generate_compare_hists_callback, state=tk.DISABLED)
-        self.generate_compare_hists_button.grid(row=0, column=1, columnspan=3, padx=10)
-        histogram_comparison_frame.pack_propagate(0)
-        histogram_comparison_frame.pack(anchor=tk.NW, padx=10)
-
-        ttk.Separator(new_image_data_frame, orient='horizontal').pack(fill='x', pady=5)
+       
         # ***********   Other Operations    ************
 
         buttons_frame = tk.Frame(new_image_data_frame, height=100, width=100, pady=5)
 
-        self.add_noise = tk.Button(buttons_frame, text="AJOUT BRUIT", width=10, padx=10, pady=5, command=self.add_noise,
+        self.add_noise = tk.Button(buttons_frame, text="BRUIT", width=10, padx=10, pady=5, command=self.add_noise,
                                    state=tk.DISABLED)
         self.add_noise.grid(row=1, column=0, padx=10)
 
@@ -195,20 +184,20 @@ class main_app:
         self.filter_size = tk.Entry(buttons_frame, width=5, state=tk.DISABLED, relief=tk.SUNKEN)
         self.filter_size.grid(row=1, column=2, sticky='w', padx=5)
 
-        self.high_filter = tk.Button(buttons_frame, text="High filter", width=10, padx=10, pady=5,
+        self.high_filter = tk.Button(buttons_frame, text="Filtre Passe haut", width=10, padx=10, pady=5,
                                      command=self.high_filter, state=tk.DISABLED)
         self.high_filter.grid(row=3, column=0, padx=10)
-        self.median_filter = tk.Button(buttons_frame, text="Median filter", padx=10, pady=5, command=self.median_filter,
+        self.median_filter = tk.Button(buttons_frame, text="Filtre médian", padx=10, pady=5, command=self.median_filter,
                                        state=tk.DISABLED)
         self.median_filter.grid(row=2, column=1, padx=10)
-        self.average_filter = tk.Button(buttons_frame, text="Average filter", padx=10, pady=5,
+        self.average_filter = tk.Button(buttons_frame, text="Filtre moyen", padx=10, pady=5,
                                         command=self.average_filter, state=tk.DISABLED)
         self.average_filter.grid(row=2, column=0, padx=10)
-        self.gauss_filter = tk.Button(buttons_frame, text="Gaussian filter", padx=10, pady=5, command=self.gauss_filter,
+        self.gauss_filter = tk.Button(buttons_frame, text="Filtre Gaussien", padx=10, pady=5, command=self.gauss_filter,
                                       state=tk.DISABLED)
         self.gauss_filter.grid(row=2, column=2, padx=10, pady=(0, 5))
 
-        self.laplace_filter = tk.Button(buttons_frame, text="Laplace filter", padx=10, pady=5,
+        self.laplace_filter = tk.Button(buttons_frame, text="Filtre Laplace", padx=10, pady=5,
                                         command=self.laplace_filter, state=tk.DISABLED)
         self.laplace_filter.grid(row=3, column=1, padx=10)
 
@@ -244,6 +233,18 @@ class main_app:
         self.new_snr_text = tk.Label(new_stat_frame, text="0", width=20, relief=tk.SUNKEN)
         self.new_snr_text.grid(row=5, column=2, sticky='w')
         new_stat_frame.pack(anchor=tk.NW, padx=10)
+         # ***********    Compare Histograms ************
+
+        histogram_comparison_frame = tk.Frame(new_image_data_frame, width=100, height=300, pady=5)
+        tk.Label(histogram_comparison_frame, text="Comparer Histogrammes:").grid(row=0, column=0, padx=5,
+                                                                                                sticky='w')
+        self.generate_compare_hists_button = tk.Button(histogram_comparison_frame, text="Visualiser", pady=5,
+                                                       command=self.generate_compare_hists_callback, state=tk.DISABLED)
+        self.generate_compare_hists_button.grid(row=0, column=1, columnspan=3, padx=10)
+        histogram_comparison_frame.pack_propagate(0)
+        histogram_comparison_frame.pack(anchor=tk.NW, padx=10)
+
+        ttk.Separator(new_image_data_frame, orient='horizontal').pack(fill='x', pady=5)
         # ***********    Saving New Edited Image ************
 
         file_frame = tk.Frame(new_image_data_frame, height=100, width=100, pady=5)

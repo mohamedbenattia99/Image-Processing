@@ -127,7 +127,7 @@ def median_filter(data, size):
 
 
 def high_filter(data):
-    filt = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
+    filt = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
     return convolution_no_average(data, filt, 3)
 
 
